@@ -17,7 +17,7 @@ export default function TopBar() {
     <header className={styles.topbar}>
       <div className={styles.left}>
         <NavLink to="/" className={styles.brand}>
-          <span className={styles.dot} /> <span>QubitX</span>
+          <span className={styles.dot} /> <span>NeoQubit</span>
         </NavLink>
       </div>
 

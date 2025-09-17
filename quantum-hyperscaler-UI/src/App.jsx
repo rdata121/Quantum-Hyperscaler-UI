@@ -18,14 +18,30 @@ import ML from "./pages/ml/Index.jsx";
 import IAM from "./pages/iam/Index.jsx";
 import Cost from "./pages/cost/Index.jsx";
 
+// verticals (detail pages)
+import Cybersecurity from "./pages/verticals/Cybersecurity.jsx";
+import Energy from "./pages/verticals/Energy.jsx";
+import Logistics from "./pages/verticals/Logistics.jsx";
+import Pharmaceuticals from "./pages/verticals/Pharmaceuticals.jsx";
+
 export default function App() {
   return (
     <AuthProvider>
       <TopBar />
       <Routes>
+        {/* public site */}
         <Route path="/" element={<Home />} />
-        <Route path="/console" element={<ConsoleEntry />} />
 
+        {/* vertical detail pages at the root */}
+        <Route path="/verticals">
+          <Route path="cybersecurity" element={<Cybersecurity />} />
+          <Route path="energy" element={<Energy />} />
+          <Route path="logistics" element={<Logistics />} />
+          <Route path="pharmaceuticals" element={<Pharmaceuticals />} />
+        </Route>
+
+        {/* console entry + app */}
+        <Route path="/console" element={<ConsoleEntry />} />
         <Route
           path="/console/app"
           element={
@@ -46,6 +62,7 @@ export default function App() {
           <Route path="cost" element={<Cost />} />
         </Route>
 
+        {/* fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>

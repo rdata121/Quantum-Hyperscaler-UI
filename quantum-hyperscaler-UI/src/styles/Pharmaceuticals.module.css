@@ -1,0 +1,81 @@
+.page { --accent: #B08CFF; } /* Pharmaceuticals = confident purple */
+
+.page { padding-bottom: 56px; }
+
+/* Hero */
+.hero { padding: clamp(28px, 6vw, 80px) 0 12px; text-align: center; position: relative; }
+.eyebrow { font-weight: 800; font-size: .78rem; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.6); margin: 0 0 8px; }
+.title { margin: 0 auto 10px; max-width: 980px; font-size: clamp(28px, 4.2vw, 46px); line-height: 1.08; font-weight: 900; }
+.subhead { margin: 0 auto; max-width: 880px; color: rgba(255,255,255,.78); font-size: clamp(16px, 1.4vw, 18px); }
+
+.ctaRow { display: flex; gap: 12px; justify-content: center; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+.ctaPrimary { background: var(--accent); color: #1b1233; font-weight: 800; padding: 12px 16px; border-radius: 12px; text-decoration: none; box-shadow: 0 6px 24px -10px var(--accent); }
+.ctaPrimary:hover { transform: translateY(-1px); }
+.ctaGhost { color: var(--accent); text-decoration: none; font-weight: 800; padding: 10px 14px; border-radius: 12px; border: 1px solid color-mix(in oklab, var(--accent) 50%, transparent); }
+.heroViz { width: 100%; max-width: 820px; margin: 18px auto 0; display: block; }
+
+/* Sections */
+.section { max-width: min(1100px, 92vw); margin: 36px auto 0; }
+.h2 { font-size: clamp(20px, 2.2vw, 26px); margin: 0 0 10px; font-weight: 900; }
+.lede { color: rgba(255,255,255,.84); }
+
+/* Split + KPIs */
+.split { max-width: min(1100px, 92vw); margin: 28px auto 0; display: grid; gap: 20px; grid-template-columns: 1.3fr .7fr; align-items: start; }
+.bullets { margin: 0; padding-left: 18px; color: rgba(255,255,255,.8); }
+.kpis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.kpi { padding: 14px; border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.12); text-align: center; }
+.kpiValue { font-weight: 900; font-size: clamp(18px, 3.2vw, 28px); color: var(--accent); line-height: 1; }
+.kpiLabel { margin-top: 6px; font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; color: rgba(255,255,255,.65); }
+
+/* Steps */
+.steps { display: grid; gap: 14px; margin: 0; padding-left: 18px; }
+.steps li { padding-left: 6px; }
+.steps h3 { margin: 0 0 4px; font-size: 1rem; }
+.steps p { margin: 0; color: rgba(255,255,255,.78); }
+
+/* Cards */
+.cardGrid { list-style: none; display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(220px,1fr)); margin: 0; padding: 0; }
+.card { border-radius: 14px; padding: 14px 14px 16px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.12); }
+.card h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 800; }
+.card p { margin: 0; color: rgba(255,255,255,.78); }
+
+/* ROI */
+.impactGrid { display: grid; grid-template-columns: repeat(4, minmax(140px,1fr)); gap: 12px; }
+.impactItem { text-align: center; border-radius: 14px; padding: 14px; background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.12); }
+.impactValue { color: var(--accent); font-weight: 900; font-size: clamp(20px, 3vw, 28px); line-height: 1; }
+.impactLabel { margin-top: 6px; font-size: .82rem; letter-spacing: .04em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+
+.vizGrid { display: grid; grid-template-columns: repeat(3, minmax(220px,1fr)); gap: 12px; margin-top: 14px; }
+.archBox { border: 1px dashed rgba(255,255,255,.2); border-radius: 14px; padding: 16px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); }
+.archRow { display: grid; grid-template-columns: 1fr 20px 1fr 20px 1fr 20px 1fr; gap: 8px; align-items: center; margin-top: 8px; }
+.archNode { padding: 10px 12px; border-radius: 12px; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.14); }
+.archArrow::after { content: "→"; color: rgba(255,255,255,.6); font-weight: 800; }
+.hint { margin: 6px 0 0; color: rgba(255,255,255,.6); font-size: .9rem; }
+
+/* Table */
+.tableWrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { border-bottom: 1px solid rgba(255,255,255,.12); text-align: left; padding: 12px 10px; vertical-align: top; }
+.table th { font-weight: 800; color: rgba(255,255,255,.9); }
+.table td { color: rgba(255,255,255,.78); }
+
+/* CTA band */
+.ctaBand { margin-top: 40px; }
+.ctaBandInner { max-width: min(1100px, 92vw); margin: 0 auto; padding: 18px 16px; border-radius: 16px; text-align: center;
+  background: radial-gradient(120% 100% at 50% 0%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 60%),
+              linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .split { grid-template-columns: 1fr; }
+  .cardGrid { grid-template-columns: repeat(2, minmax(220px,1fr)); }
+  .impactGrid { grid-template-columns: repeat(2, minmax(140px,1fr)); }
+  .vizGrid { grid-template-columns: 1fr; }
+  .archRow { grid-template-columns: 1fr 16px 1fr 16px 1fr 16px 1fr; }
+}
+@media (max-width: 560px) {
+  .cardGrid { grid-template-columns: 1fr; }
+  .impactGrid { grid-template-columns: 1fr 1fr; }
+}
