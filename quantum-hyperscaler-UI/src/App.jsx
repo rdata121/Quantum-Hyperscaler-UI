@@ -7,6 +7,7 @@ import ProtectedRoute from "./auth/ProtectedRoute.jsx";
 import ConsoleEntry from "./pages/ConsoleEntry.jsx";
 import ConsoleLayout from "./app/ConsoleLayout.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import ReservationCalendar from "./components/ReservationCalendar.jsx";
 
 import FleetCapacity from "./pages/optimization/FleetPlanning/FleetPlanning.jsx";
 import RouteOptimization from "./pages/optimization/RouteOptimization.jsx";
@@ -42,6 +43,11 @@ export default function App() {
 
         {/* console entry + app */}
         <Route path="/console" element={<ConsoleEntry />} />
+        <Route path="/reservations" element={
+          <ProtectedRoute redirectTo="/console">
+            <ReservationCalendar />
+          </ProtectedRoute>
+        } />
         <Route
           path="/console/app"
           element={

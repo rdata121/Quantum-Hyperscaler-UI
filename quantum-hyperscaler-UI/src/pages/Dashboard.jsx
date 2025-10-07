@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,7 +12,7 @@ import {
   Users, Calendar, AlertCircle, CheckCircle, Info,
   ArrowUp, ArrowDown, Minus, MoreVertical, RefreshCw,
   Shield, Cloud, Server, GitBranch, Package, Layers,
-  BarChart3, Timer, Hash
+  BarChart3, Timer, Hash, Calendar as CalendarIcon
 } from 'lucide-react';
 import styles from '../styles/dashboard.module.css';
 
@@ -75,6 +76,11 @@ export default function Dashboard() {
     location: 'San Francisco, CA',
     device: 'Chrome on macOS'
   });
+  
+  // Firebase token state
+  const { user, idToken } = useAuth();
+  const [firebaseToken, setFirebaseToken] = useState('');
+  const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     // Generate initial data
@@ -91,6 +97,16 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, [timeRange]);
+
+  // Function to get Firebase token
+  const getToken = async () => {
+    if (user) {
+      const token = await idToken();
+      setFirebaseToken(token);
+      setShowToken(true);
+      console.log('Firebase ID Token:', token);
+    }
+  };
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -170,6 +186,47 @@ export default function Dashboard() {
             </div>
 
             <div className={styles.headerActions}>
+              <Link 
+                to="/reservations"
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  marginRight: '10px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                <CalendarIcon size={14} />
+                Book Quantum Machines
+              </Link>
+
+              <Link 
+                to="/simple-booking"
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 12px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  marginRight: '10px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px'
+                }}
+              >
+                🚀 Quick Booking
+              </Link>
+              
               <select 
                 className={styles.timeRangeSelect}
                 value={timeRange}
@@ -191,6 +248,69 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Firebase Token Display */}
+      {showToken && firebaseToken && (
+        <div style={{
+          background: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: '8px',
+          padding: '20px',
+          margin: '20px 0',
+          fontFamily: 'monospace'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>Firebase ID Token (for API testing):</h3>
+          <textarea 
+            value={firebaseToken}
+            readOnly
+            style={{
+              width: '100%',
+              height: '80px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              padding: '8px',
+              fontSize: '12px',
+              fontFamily: 'monospace'
+            }}
+          />
+          <div style={{ marginTop: '10px' }}>
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(firebaseToken);
+                alert('Token copied to clipboard!');
+              }}
+              style={{
+                background: '#28a745',
+                color: 'white',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginRight: '10px'
+              }}
+            >
+              Copy Token
+            </button>
+            <button 
+              onClick={() => setShowToken(false)}
+              style={{
+                background: '#6c757d',
+                color: 'white',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Hide
+            </button>
+          </div>
+          <div style={{ marginTop: '10px', fontSize: '12px', color: '#6c757d' }}>
+            <strong>Test Commands:</strong><br/>
+            <code>curl -H "Authorization: Bearer {firebaseToken.substring(0, 20)}..." http://localhost:8000/api/auth/me</code>
+          </div>
+        </div>
+      )}
 
       {/* Key Metrics Cards */}
       <div className={styles.metricsGrid}>
