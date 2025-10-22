@@ -18,6 +18,8 @@ import Graph from "./pages/graph/Index.jsx";
 import ML from "./pages/ml/Index.jsx";
 import IAM from "./pages/iam/Index.jsx";
 import Cost from "./pages/cost/Index.jsx";
+import UserAdmin from "./pages/admin/UserAdmin.jsx";
+import ProviderAdmin from "./pages/admin/ProviderAdmin.jsx";
 
 // verticals (detail pages)
 import Cybersecurity from "./pages/verticals/Cybersecurity.jsx";
@@ -46,6 +48,16 @@ export default function App() {
         <Route path="/reservations" element={
           <ProtectedRoute redirectTo="/console">
             <ReservationCalendar />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute redirectTo="/console">
+            <UserAdmin />
+          </ProtectedRoute>
+        } />
+        <Route path="/provider-admin" element={
+          <ProtectedRoute redirectTo="/console">
+            <ProviderAdmin />
           </ProtectedRoute>
         } />
         <Route

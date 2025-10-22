@@ -15,6 +15,7 @@ import {
   BarChart3, Timer, Hash, Calendar as CalendarIcon
 } from 'lucide-react';
 import styles from '../styles/dashboard.module.css';
+const API_BASE = 'http://localhost:8000';
 
 // Mock data generators
 const generateTimeSeriesData = (days = 30) => {
@@ -76,6 +77,39 @@ export default function Dashboard() {
     location: 'San Francisco, CA',
     device: 'Chrome on macOS'
   });
+  const [roles, setRoles] = useState(() => {
+    // Load roles from cache immediately for instant button display
+    try {
+      const cachedRoles = localStorage.getItem('user_roles_cache');
+      if (cachedRoles) {
+        const parsed = JSON.parse(cachedRoles);
+        console.log('⚡ Dashboard: Roles loaded from cache on init:', parsed);
+        return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse cached roles:', e);
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('firebase_token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const me = await res.json();
+          if (Array.isArray(me.roles)) {
+            setRoles(me.roles);
+            // Cache for instant next load
+            localStorage.setItem('user_roles_cache', JSON.stringify(me.roles));
+            localStorage.setItem('user_roles_email', me.email);
+          }
+        }
+      } catch {}
+    })();
+  }, []);
   
   // Firebase token state
   const { user, idToken } = useAuth();
@@ -207,25 +241,67 @@ export default function Dashboard() {
                 Book Quantum Machines
               </Link>
 
-              <Link 
-                to="/simple-booking"
-                style={{
-                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  marginRight: '10px',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px'
-                }}
-              >
-                🚀 Quick Booking
-              </Link>
+              {Array.isArray(roles) && roles.includes('provider_admin') ? (
+                <Link 
+                  to="/provider-admin"
+                  style={{
+                    background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginRight: '10px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  🔐 Provider Admin
+                </Link>
+              ) : Array.isArray(roles) && roles.includes('tenant_admin') ? (
+                <Link 
+                  to="/admin"
+                  style={{
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginRight: '10px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  🛠️ Tenant Admin
+                </Link>
+              ) : (
+                <Link 
+                  to="/simple-booking"
+                  style={{
+                    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    marginRight: '10px',
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  🚀 Quick Booking
+                </Link>
+              )}
               
               <select 
                 className={styles.timeRangeSelect}

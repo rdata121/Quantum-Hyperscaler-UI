@@ -6,7 +6,10 @@ import {
   Zap, Network, Calendar, Package, Route, Hash, Layers,
   DollarSign, Shield, BarChart3, Brain
 } from 'lucide-react';
+import { useAuth } from '../auth/AuthProvider';
 import styles from '../styles/sidebar.module.css';
+
+const API_BASE = 'http://localhost:8000';
 
 // Organized route structure
 const MENU_STRUCTURE = [
@@ -80,6 +83,9 @@ const STORAGE_KEYS = {
 };
 
 export default function Sidebar({ onWidthChange }) {
+  const { user, idToken } = useAuth();
+  const [userRoles, setUserRoles] = useState([]);
+  
   // Core state
   const [collapsed, setCollapsed] = useState(() => 
     localStorage.getItem(STORAGE_KEYS.collapsed) === 'true'
@@ -104,6 +110,41 @@ export default function Sidebar({ onWidthChange }) {
     } catch {}
     return MENU_STRUCTURE;
   });
+  
+  // Fetch user roles with local cache for instant display
+  useEffect(() => {
+    if (!user) return;
+    
+    // Try to load roles from localStorage first (instant)
+    const cachedRoles = localStorage.getItem('user_roles_cache');
+    const cachedEmail = localStorage.getItem('user_roles_email');
+    if (cachedRoles && cachedEmail === user.email) {
+      try {
+        setUserRoles(JSON.parse(cachedRoles));
+        console.log('⚡ User roles loaded from cache');
+      } catch (e) {}
+    }
+    
+    // Then fetch fresh roles in background
+    (async () => {
+      try {
+        const token = await idToken();
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/api/auth/me`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        if (res.ok) {
+          const me = await res.json();
+          setUserRoles(me.roles || []);
+          // Cache for next load
+          localStorage.setItem('user_roles_cache', JSON.stringify(me.roles || []));
+          localStorage.setItem('user_roles_email', user.email);
+        }
+      } catch (err) {
+        console.error('Failed to fetch user roles:', err);
+      }
+    })();
+  }, [user, idToken]);
 
   // Drag state
   const [draggedSection, setDraggedSection] = useState(null);
@@ -330,6 +371,44 @@ export default function Sidebar({ onWidthChange }) {
       {/* Footer */}
       {!collapsed && (
         <div className={styles.footer}>
+          {userRoles.includes('provider_admin') && (
+            <NavLink 
+              to="/provider-admin" 
+              className={styles.footerBtn}
+              style={{ 
+                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                color: 'white',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginBottom: '8px',
+                fontWeight: 600
+              }}
+            >
+              🔐 Provider Admin
+            </NavLink>
+          )}
+          {userRoles.includes('tenant_admin') && (
+            <NavLink 
+              to="/admin" 
+              className={styles.footerBtn}
+              style={{ 
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: 'white',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                marginBottom: '8px',
+                fontWeight: 600
+              }}
+            >
+              🛠️ Tenant Admin
+            </NavLink>
+          )}
           <button className={styles.footerBtn} onClick={resetOrder}>
             Reset Order
           </button>
