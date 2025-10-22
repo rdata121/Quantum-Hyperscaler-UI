@@ -1,7 +1,8 @@
 /* Reservation Calendar Styles */
 .reservation-calendar {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--bg);
+  color: var(--fg);
   padding: 20px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -11,19 +12,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   padding: 20px 30px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .header-left h1 {
   margin: 0;
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--accent-grad);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -31,7 +33,7 @@
 
 .header-left p {
   margin: 5px 0 0 0;
-  color: #6b7280;
+  color: var(--muted);
   font-size: 1rem;
 }
 
@@ -49,7 +51,7 @@
 
 .user-info span {
   font-weight: 500;
-  color: #374151;
+  color: var(--fg);
 }
 
 .logout-btn {
@@ -57,7 +59,7 @@
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -70,18 +72,19 @@
 
 /* Machine Selector */
 .machine-selector {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   padding: 25px 30px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .machine-selector label {
   display: block;
   font-weight: 600;
-  color: #374151;
+  color: var(--fg);
   margin-bottom: 10px;
   font-size: 1.1rem;
 }
@@ -89,30 +92,31 @@
 .machine-selector select {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
   font-size: 1rem;
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
   transition: all 0.3s ease;
 }
 
 .machine-selector select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--brand-1);
+  box-shadow: 0 0 0 3px rgba(53, 229, 207, 0.1);
 }
 
 .machine-info {
   margin-top: 20px;
   padding: 20px;
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-  border-radius: 12px;
-  border-left: 4px solid #667eea;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--brand-1);
 }
 
 .machine-info h3 {
   margin: 0 0 15px 0;
-  color: #1f2937;
+  color: var(--fg);
   font-size: 1.3rem;
 }
 
@@ -123,13 +127,13 @@
 }
 
 .detail {
-  background: white;
+  background: rgba(255, 255, 255, 0.05);
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   font-size: 0.9rem;
   font-weight: 500;
-  color: #374151;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: var(--fg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Legend */
@@ -137,12 +141,13 @@
   display: flex;
   justify-content: center;
   gap: 30px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   padding: 15px 30px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .legend-item {
@@ -150,7 +155,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 500;
-  color: #374151;
+  color: var(--fg);
 }
 
 .legend-color {
@@ -160,12 +165,12 @@
   display: inline-block;
 }
 
-.legend-color.available {
-  background: #10b981;
-}
-
 .legend-color.reserved {
   background: #ef4444;
+}
+
+.legend-color.available {
+  background: #35e5cf;
 }
 
 .legend-color.pending {
@@ -173,22 +178,42 @@
 }
 
 .legend-color.confirmed {
-  background: #3b82f6;
+  background: var(--brand-2);
+}
+
+.legend-color.active {
+  background: #10b981;
+}
+
+.legend-color.unavailable {
+  background: #6b7280;
 }
 
 /* Calendar Container */
 .calendar-container {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   padding: 25px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   margin-bottom: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: auto; /* Let calendar determine its own height */
 }
 
 /* FullCalendar Overrides */
 .fc {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--fg);
+  height: auto !important; /* Let calendar auto-size */
+}
+
+.fc-timegrid {
+  height: auto !important; /* Let timegrid auto-size */
+}
+
+.fc-timegrid-body {
+  height: auto !important; /* Allow body to expand */
 }
 
 .fc-toolbar {
@@ -198,13 +223,13 @@
 .fc-toolbar-title {
   font-size: 1.5rem !important;
   font-weight: 700 !important;
-  color: #1f2937 !important;
+  color: var(--fg) !important;
 }
 
 .fc-button {
-  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  background: var(--accent-grad) !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius) !important;
   font-weight: 500 !important;
   padding: 8px 16px !important;
   transition: all 0.3s ease !important;
@@ -212,34 +237,39 @@
 
 .fc-button:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+  box-shadow: 0 4px 12px rgba(53, 229, 207, 0.4) !important;
 }
 
 .fc-button:disabled {
-  background: #9ca3af !important;
+  background: var(--muted) !important;
   cursor: not-allowed !important;
 }
 
 .fc-daygrid-day-number {
   font-weight: 600 !important;
-  color: #374151 !important;
+  color: var(--fg) !important;
 }
 
 .fc-timegrid-slot {
-  border-color: #e5e7eb !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  height: 1.8rem !important; /* Further reduced slot height */
 }
 
 .fc-timegrid-slot-label {
   font-weight: 500 !important;
-  color: #6b7280 !important;
+  color: var(--muted) !important;
+  font-size: 0.7rem !important; /* Even smaller text */
 }
 
 .fc-event {
-  border-radius: 6px !important;
+  border-radius: 4px !important;
   border: none !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
+  margin: 1px !important; /* Reduced spacing between events */
+  font-size: 0.7rem !important; /* Even smaller text */
+  padding: 2px 4px !important; /* Reduced padding */
 }
 
 .fc-event:hover {
@@ -256,21 +286,21 @@
 }
 
 .action-btn {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: var(--accent-grad);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: var(--shadow-1);
 }
 
 .action-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 6px 20px rgba(53, 229, 207, 0.4);
 }
 
 /* Modal */
@@ -280,7 +310,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
@@ -290,13 +320,14 @@
 }
 
 .booking-modal {
-  background: white;
-  border-radius: 20px;
+  background: var(--bg);
+  border-radius: var(--radius);
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   animation: modalSlideIn 0.3s ease-out;
 }
 
@@ -316,21 +347,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 25px 30px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-header h3 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--fg);
 }
 
 .close-btn {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #6b7280;
+  color: var(--muted);
   cursor: pointer;
   padding: 5px;
   border-radius: 50%;
@@ -343,8 +374,8 @@
 }
 
 .close-btn:hover {
-  background: #f3f4f6;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg);
 }
 
 .modal-content {
@@ -352,17 +383,17 @@
 }
 
 .booking-info {
-  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  background: rgba(255, 255, 255, 0.03);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   margin-bottom: 25px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--brand-1);
 }
 
 .booking-info p {
   margin: 5px 0;
   font-weight: 500;
-  color: #374151;
+  color: var(--fg);
 }
 
 .form-group {
@@ -372,7 +403,7 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #374151;
+  color: var(--fg);
   margin-bottom: 8px;
 }
 
@@ -381,19 +412,21 @@
 .form-group textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
   font-size: 1rem;
   transition: all 0.3s ease;
   font-family: inherit;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--brand-1);
+  box-shadow: 0 0 0 3px rgba(53, 229, 207, 0.1);
 }
 
 .form-group.checkbox {
@@ -417,43 +450,43 @@
   justify-content: flex-end;
   gap: 15px;
   padding: 25px 30px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .cancel-btn {
-  background: #f3f4f6;
-  color: #374151;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--fg);
   border: none;
   padding: 12px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .cancel-btn:hover {
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .book-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: var(--accent-grad);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-1);
 }
 
 .book-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(53, 229, 207, 0.4);
 }
 
 .book-btn:disabled {
-  background: #9ca3af;
+  background: var(--muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;

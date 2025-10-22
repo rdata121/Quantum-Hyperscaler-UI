@@ -18,7 +18,7 @@ const ReservationCalendar = () => {
   const [loading, setLoading] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     duration_hours: 2,
-    job_description: '',
+    job_description: 'Quantum computing research and experimentation',
     job_type: 'research',
     priority: 'medium',
     estimated_qubits: 10,
@@ -28,6 +28,8 @@ const ReservationCalendar = () => {
 
   const calendarRef = useRef(null);
   const API_BASE = 'http://localhost:8000';
+  const [roles, setRoles] = useState([]);
+  const isTenantAdmin = Array.isArray(roles) && roles.includes('tenant_admin');
 
   // Fetch machines on component mount
   useEffect(() => {
@@ -35,6 +37,21 @@ const ReservationCalendar = () => {
     getFreshToken().then(() => {
       fetchMachines();
     });
+  }, []);
+
+  // Fetch roles for gating admin button
+  useEffect(() => {
+    (async () => {
+      try {
+        const token = localStorage.getItem('firebase_token');
+        if (!token) return;
+        const res = await fetch(`${API_BASE}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const me = await res.json();
+          if (Array.isArray(me.roles)) setRoles(me.roles);
+        }
+      } catch {}
+    })();
   }, []);
 
   const getFreshToken = async () => {
@@ -62,6 +79,18 @@ const ReservationCalendar = () => {
   const fetchMachines = async () => {
     try {
       console.log('🚀 Starting to fetch machines...');
+      // Instant load from local cache if present (10 min TTL)
+      const cached = localStorage.getItem('machines_cache');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed && Array.isArray(parsed.data) && Date.now() - (parsed.ts || 0) < 10 * 60 * 1000) {
+            setMachines(parsed.data);
+            if (parsed.data.length && !selectedMachine) setSelectedMachine(parsed.data[0]);
+            console.log('⚡ Machines served instantly from local cache');
+          }
+        } catch {}
+      }
       
       let token = localStorage.getItem('firebase_token');
       console.log('🔑 Token available:', !!token);
@@ -107,6 +136,8 @@ const ReservationCalendar = () => {
         
         console.log('🤖 Final machines array:', machinesArray);
         setMachines(machinesArray);
+        // Refresh cache
+        try { localStorage.setItem('machines_cache', JSON.stringify({ ts: Date.now(), data: machinesArray })); } catch {}
         
         if (machinesArray.length > 0) {
           setSelectedMachine(machinesArray[0]);
@@ -149,6 +180,7 @@ const ReservationCalendar = () => {
   };
 
   const fetchAvailability = async () => {
+    console.log('🚀 FRONTEND: fetchAvailability called');
     if (!selectedMachine) {
       console.log('❌ No machine selected, skipping availability fetch');
       alert('❌ Please select a quantum machine first!');
@@ -172,14 +204,33 @@ const ReservationCalendar = () => {
         return;
       }
 
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + 14); // Next 2 weeks
+      // Get the calendar's visible date range
+      const calendarApi = calendarRef.current?.getApi();
+      if (!calendarApi) {
+        console.error('❌ Calendar API not available');
+        return;
+      }
+      
+      const view = calendarApi.view;
+      const startDate = new Date(view.activeStart);
+      const endDate = new Date(view.activeEnd);
+      
+      console.log('📅 Calendar view dates:', {
+        activeStart: view.activeStart.toISOString().split('T')[0],
+        activeEnd: view.activeEnd.toISOString().split('T')[0]
+      });
+      
+      console.log('📅 Fetching availability for date range:', {
+        start: startDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0],
+        days: Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+      });
 
       const url = `${API_BASE}/api/reservations/availability?` +
         `start_date=${startDate.toISOString().split('T')[0]}&` +
         `end_date=${endDate.toISOString().split('T')[0]}&` +
-        `machine_type=${selectedMachine.machine_type}`;
+        `machine_type=${selectedMachine.machine_type}&` +
+        `_t=${Date.now()}`; // Cache busting
 
       console.log('🔗 Fetching availability from:', url);
       console.log('📅 Date range:', {
@@ -202,10 +253,18 @@ const ReservationCalendar = () => {
         console.log('✅ Availability fetched successfully:', data);
         console.log('📊 Number of availability entries:', data.length);
         
+        // Debug: Log details about each day's slots
+        data.forEach((day, index) => {
+          console.log(`📅 Day ${index + 1} (${day.date}): ${day.time_slots.length} slots`);
+          const availableSlots = day.time_slots.filter(slot => slot.available);
+          const reservedSlots = day.time_slots.filter(slot => !slot.available);
+          console.log(`   - Available: ${availableSlots.length}, Reserved: ${reservedSlots.length}`);
+        });
+        
         if (data.length === 0) {
           alert('⚠️ No availability data returned. This might be normal if the machine is fully booked.');
         } else {
-          alert(`✅ Loaded ${data.length} availability entries successfully!`);
+          console.log(`Loaded ${data.length} availability entries successfully.`);
         }
         
         setAvailability(data);
@@ -260,28 +319,110 @@ const ReservationCalendar = () => {
     // Clear existing events
     calendarApi.removeAllEvents();
 
+    console.log('📅 Updating calendar with availability data:', availabilityData);
+
     // Add availability events
+    let totalEventsAdded = 0;
     availabilityData.forEach(day => {
-      day.time_slots.forEach(slot => {
+      console.log(`📅 Processing day ${day.date} with ${day.time_slots.length} slots`);
+      
+      day.time_slots.forEach((slot, slotIndex) => {
         const startTime = new Date(slot.start_time);
         const endTime = new Date(slot.end_time);
         
-        calendarApi.addEvent({
+        console.log(`   Slot ${slotIndex + 1}: ${startTime.toLocaleString()} to ${endTime.toLocaleString()} - ${slot.available ? 'Available' : 'Reserved'}`);
+        console.log(`   🕐 Raw slot data:`, {
+          start_time: slot.start_time,
+          end_time: slot.end_time,
+          available: slot.available,
+          reservation_status: slot.reservation_status
+        });
+        console.log(`   🕐 Parsed times - Start: ${startTime.toISOString()}, End: ${endTime.toISOString()}`);
+        console.log(`   🕐 IST times - Start: ${startTime.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}, End: ${endTime.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}`);
+        
+        // Check if this slot should be visible in the calendar
+        const hourIST = startTime.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false});
+        console.log(`   🕐 Hour in IST: ${hourIST}`);
+        
+        // Remove the filtering - let all slots show
+        // if (parseInt(hourIST) < 9 || parseInt(hourIST) >= 20) {
+        //   console.log(`   ⚠️ Slot outside 9 AM - 8 PM range, skipping`);
+        //   return;
+        // }
+        
+        // Determine color based on reservation status
+        let slotColor;
+        let slotTitle;
+        if (slot.available) {
+          slotColor = '#35e5cf';  // Teal for available
+          slotTitle = 'Available';
+        } else {
+          // Slot is reserved, use status-based colors
+          switch (slot.reservation_status) {
+            case 'pending':
+              slotColor = '#f59e0b';  // Orange for pending
+              slotTitle = 'Pending';
+              break;
+            case 'confirmed':
+              slotColor = '#3b82f6';  // Blue for confirmed
+              slotTitle = 'Confirmed';
+              break;
+            case 'active':
+              slotColor = '#10b981';  // Green for active
+              slotTitle = 'Active';
+              break;
+            case 'unavailable':
+              slotColor = '#6b7280';  // Gray for unavailable
+              slotTitle = 'Unavailable';
+              break;
+            default:
+              slotColor = '#ef4444';  // Red for reserved/other
+              slotTitle = 'Reserved';
+          }
+        }
+        
+        const eventData = {
           id: `slot-${slot.machine_id}-${startTime.getTime()}`,
-          title: slot.available ? 'Available' : 'Reserved',
+          title: slotTitle,
           start: startTime,
           end: endTime,
-          color: slot.available ? '#10b981' : '#ef4444',
+          color: slotColor,
           display: 'block',
           extendedProps: {
             available: slot.available,
             price: slot.price_per_hour,
             machineId: slot.machine_id,
-            machineName: slot.machine_name
+            machineName: slot.machine_name,
+            reservationStatus: slot.reservation_status
           }
-        });
+        };
+        
+        console.log(`   📅 Adding event data:`, eventData);
+        console.log(`   🕐 Slot times - Start: ${startTime.toISOString()}, End: ${endTime.toISOString()}`);
+        console.log(`   🕐 Slot times - Start IST: ${startTime.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}, End IST: ${endTime.toLocaleString('en-IN', {timeZone: 'Asia/Kolkata'})}`);
+        calendarApi.addEvent(eventData);
+        
+        console.log(`   ✅ Added event: ${slotTitle} at ${startTime.toLocaleString()} - ${endTime.toLocaleString()}`);
+        totalEventsAdded++;
       });
     });
+    
+    console.log(`✅ Calendar events updated - Total events added: ${totalEventsAdded}`);
+    
+    // Debug: Check what events are actually in the calendar
+    setTimeout(() => {
+      const calendarApi = calendarRef.current?.getApi();
+      if (calendarApi) {
+        const allEvents = calendarApi.getEvents();
+        console.log(`🔍 Calendar now has ${allEvents.length} events:`, allEvents.map(e => ({
+          id: e.id,
+          title: e.title,
+          start: e.start?.toLocaleString(),
+          end: e.end?.toLocaleString(),
+          color: e.color
+        })));
+      }
+    }, 100);
   };
 
   const updateCalendarWithReservations = (reservationsData) => {
@@ -335,13 +476,20 @@ const ReservationCalendar = () => {
     } else {
       // User clicked on empty space - show info about how to book
       console.log('📅 Empty space clicked');
-      alert('💡 To book a reservation:\n\n1. Select a quantum machine from the dropdown above\n2. Click on a GREEN "Available" time slot\n3. Fill out the booking form\n\nGreen slots are available for booking!');
+      alert('💡 To book a reservation:\n\n1. Select a quantum machine from the dropdown above\n2. Click on a TEAL "Available" time slot\n3. Fill out the booking form\n\nTeal slots are available for booking!\n\nLegend:\n• Teal = Available for booking\n• Orange = Pending reservations\n• Blue = Confirmed reservations\n• Green = Active reservations\n• Gray = Unavailable slots');
     }
   };
 
   const handleCreateReservation = async () => {
     try {
       setLoading(true);
+      
+      // Validate job description
+      if (!bookingForm.job_description || bookingForm.job_description.trim().length < 10) {
+        alert('❌ Job description must be at least 10 characters long');
+        setLoading(false);
+        return;
+      }
       
       // Get fresh token first
       let token = localStorage.getItem('firebase_token');
@@ -352,6 +500,7 @@ const ReservationCalendar = () => {
       
       if (!token) {
         alert('No authentication token available. Please login again.');
+        setLoading(false);
         return;
       }
       
@@ -359,7 +508,7 @@ const ReservationCalendar = () => {
         machine_id: selectedMachine.id,
         start_time: selectedTime.toISOString(),
         duration_hours: bookingForm.duration_hours,
-        job_description: bookingForm.job_description,
+        job_description: bookingForm.job_description.trim(),
         job_type: bookingForm.job_type,
         priority: bookingForm.priority,
         estimated_qubits: bookingForm.estimated_qubits,
@@ -451,7 +600,7 @@ const ReservationCalendar = () => {
           <option value="">{machines.length === 0 ? 'Loading machines...' : 'Choose a quantum machine...'}</option>
           {machines.map(machine => (
             <option key={machine.id} value={machine.id}>
-              {machine.name} - ${machine.hourly_rate}/hour ({machine.min_duration}-{machine.max_duration}h)
+              {machine.name}
             </option>
           ))}
         </select>
@@ -461,7 +610,7 @@ const ReservationCalendar = () => {
           <div className="machine-info">
             <h3>📋 {selectedMachine.name}</h3>
             <div className="machine-details">
-              <span className="detail">💰 ${selectedMachine.hourly_rate}/hour</span>
+              <span className="detail">💰 {selectedMachine.hourly_rate}/hour</span>
               <span className="detail">⏱️ {selectedMachine.min_duration}-{selectedMachine.max_duration} hours</span>
               <span className="detail">👥 Capacity: {selectedMachine.capacity} user(s)</span>
               <span className="detail">🔧 Features: {selectedMachine.features.join(', ')}</span>
@@ -474,19 +623,23 @@ const ReservationCalendar = () => {
       <div className="calendar-legend">
         <div className="legend-item">
           <span className="legend-color available"></span>
-          <span>Available Slots</span>
-        </div>
-        <div className="legend-item">
-          <span className="legend-color reserved"></span>
-          <span>Reserved</span>
+          <span>Available</span>
         </div>
         <div className="legend-item">
           <span className="legend-color pending"></span>
-          <span>My Reservations (Pending)</span>
+          <span>Pending</span>
         </div>
         <div className="legend-item">
           <span className="legend-color confirmed"></span>
-          <span>My Reservations (Confirmed)</span>
+          <span>Confirmed</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color active"></span>
+          <span>Active</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color unavailable"></span>
+          <span>Unavailable</span>
         </div>
       </div>
 
@@ -496,16 +649,23 @@ const ReservationCalendar = () => {
           ref={calendarRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
+          timeZone="Asia/Kolkata"
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
             right: 'dayGridMonth,timeGridWeek,timeGridDay'
           }}
           height="auto"
-          slotMinTime="08:00:00"
+          slotMinTime="09:00:00"
           slotMaxTime="20:00:00"
           slotDuration="01:00:00"
           snapDuration="01:00:00"
+          scrollTime="09:00:00"
+          scrollTimeReset={false}
+          allDaySlot={false}
+          dayMaxEvents={false}
+          moreLinkClick="popover"
+          expandRows={true}
           selectable={false}
           selectMirror={false}
           dateClick={handleDateClick}
@@ -527,20 +687,32 @@ const ReservationCalendar = () => {
           📋 View My Reservations
         </button>
         <button 
-          onClick={fetchAvailability}
+          onClick={() => {
+            // Clear any cached data
+            localStorage.removeItem('machines_cache');
+            console.log('🔄 Clearing cache and refreshing availability...');
+            fetchAvailability();
+          }}
           className="action-btn"
-          style={{ backgroundColor: '#8b5cf6', color: 'white' }}
           disabled={!selectedMachine}
         >
-          🎯 Load Availability
+          🔄 Refresh Availability
         </button>
-        <button 
-          onClick={() => alert('💡 How to Book:\n\n1. Select a quantum machine above\n2. Click "Load Availability" to fetch slots\n3. Click on GREEN "Available" time slots\n4. Fill out the booking form\n5. Click "Book Reservation"')}
-          className="action-btn help-btn"
-          style={{ backgroundColor: '#10b981', color: 'white' }}
-        >
-          ❓ How to Book
-        </button>
+        {isTenantAdmin ? (
+          <button
+            onClick={() => { window.location.href = '/admin'; }}
+            className="action-btn help-btn"
+          >
+            🛠️ Tenant Admin
+          </button>
+        ) : (
+          <button 
+            onClick={() => alert('💡 How to Book:\n\n1. Select a quantum machine above\n2. Click "Load Availability" to fetch slots\n3. Click on TEAL "Available" time slots\n4. Fill out the booking form\n5. Click "Book Reservation"\n\nLegend:\n• Teal = Available for booking\n• Orange = Pending reservations\n• Blue = Confirmed reservations\n• Green = Active reservations\n• Gray = Unavailable slots')}
+            className="action-btn help-btn"
+          >
+            ❓ How to Book
+          </button>
+        )}
       </div>
 
       {/* Booking Modal */}
@@ -558,21 +730,15 @@ const ReservationCalendar = () => {
             </div>
             
             <div className="modal-content">
-              <div className="booking-info" style={{
-                background: '#f0f9ff',
-                border: '1px solid #0ea5e9',
-                borderRadius: '8px',
-                padding: '15px',
-                marginBottom: '20px'
-              }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#0c4a6e' }}>📅 Reservation Details</h4>
+              <div className="booking-info">
+                <h4 style={{ margin: '0 0 10px 0', color: 'var(--fg)' }}>📅 Reservation Details</h4>
                 <p><strong>Machine:</strong> {selectedMachine?.name}</p>
                 <p><strong>Type:</strong> {selectedMachine?.machine_type}</p>
                 <p><strong>Date:</strong> {selectedDate?.toLocaleDateString()}</p>
                 <p><strong>Time:</strong> {selectedTime?.toLocaleTimeString()}</p>
                 <p><strong>Duration:</strong> {bookingForm.duration_hours} hour{bookingForm.duration_hours > 1 ? 's' : ''}</p>
-                <p><strong>Hourly Rate:</strong> ${selectedMachine?.hourly_rate}/hour</p>
-                <p><strong>Total Cost:</strong> <span style={{ color: '#059669', fontWeight: 'bold' }}>${selectedMachine?.hourly_rate * bookingForm.duration_hours}</span></p>
+                <p><strong>Hourly Rate:</strong> {selectedMachine?.hourly_rate}/hour</p>
+                <p><strong>Total Cost:</strong> <span style={{ color: 'var(--brand-1)', fontWeight: 'bold' }}>{selectedMachine?.hourly_rate * bookingForm.duration_hours}</span></p>
               </div>
 
               <div className="form-group">
@@ -627,14 +793,18 @@ const ReservationCalendar = () => {
               </div>
 
               <div className="form-group">
-                <label>Job Description:</label>
+                <label>Job Description: (minimum 10 characters)</label>
                 <textarea 
                   value={bookingForm.job_description}
                   onChange={(e) => setBookingForm({...bookingForm, job_description: e.target.value})}
-                  placeholder="Describe your quantum computing task..."
+                  placeholder="Describe your quantum computing task (at least 10 characters)..."
                   rows="3"
                   required
+                  minLength="10"
                 />
+        <small style={{color: bookingForm.job_description.length < 10 ? '#ef4444' : 'var(--brand-1)'}}>
+          {bookingForm.job_description.length} / 10 characters
+        </small>
               </div>
 
               <div className="form-group checkbox">
