@@ -19,6 +19,7 @@ import ML from "./pages/ml/Index.jsx";
 import IAM from "./pages/iam/Index.jsx";
 import Cost from "./pages/cost/Index.jsx";
 import UserAdmin from "./pages/admin/UserAdmin.jsx";
+import TenantAdmin from "./pages/admin/TenantAdmin.jsx";
 import ProviderAdmin from "./pages/admin/ProviderAdmin.jsx";
 
 // verticals (detail pages)
@@ -52,7 +53,7 @@ export default function App() {
         } />
         <Route path="/admin" element={
           <ProtectedRoute redirectTo="/console">
-            <UserAdmin />
+            <TenantAdmin />
           </ProtectedRoute>
         } />
         <Route path="/provider-admin" element={
