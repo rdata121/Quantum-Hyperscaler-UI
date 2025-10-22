@@ -13,6 +13,7 @@ export default function TenantAdmin() {
     const [users, setUsers] = useState([]);
     const [reservations, setReservations] = useState([]);
     const [newUser, setNewUser] = useState({ email: '', password: '', role: 'tenant_user' });
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         if (!user) return;
@@ -52,15 +53,96 @@ export default function TenantAdmin() {
     const loadData = async () => {
         try {
             const token = await idToken();
+            console.log('🚀 Starting to load tenant admin data...');
+            
+            // Local cache configuration
+            const CACHE_KEYS = {
+                users: 'tenant_users_cache',
+                reservations: 'tenant_reservations_cache'
+            };
+            const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+            
+            // Load from local cache first (instant display)
+            const cachedUsers = localStorage.getItem(CACHE_KEYS.users);
+            const cachedReservations = localStorage.getItem(CACHE_KEYS.reservations);
+            const cacheTime = localStorage.getItem(CACHE_KEYS.users + '_time');
+            
+            const cacheValid = cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_TTL);
+            
+            if (cacheValid) {
+                // Display cached data instantly
+                if (cachedUsers) {
+                    setUsers(JSON.parse(cachedUsers));
+                    console.log('⚡ Users loaded instantly from local cache');
+                }
+                if (cachedReservations) {
+                    setReservations(JSON.parse(cachedReservations));
+                    console.log('⚡ Reservations loaded instantly from local cache');
+                }
+                
+                // Refresh in background (don't await)
+                console.log('🔄 Refreshing data in background...');
+                fetchFreshData(token, CACHE_KEYS);
+                return; // Exit early - data is already displayed
+            }
+            
+            // No valid cache - fetch fresh data
+            console.log('💾 No cache found - fetching from API...');
+            await fetchFreshData(token, CACHE_KEYS);
+            
+        } catch (e) {
+            console.error('Failed to load tenant data', e);
+        }
+    };
+    
+    const fetchFreshData = async (token, CACHE_KEYS) => {
+        const startTime = Date.now();
+        try {
             const tasks = [
                 withTimeout(`${API_BASE}/tenant/users`, { headers: { Authorization: `Bearer ${token}` } }),
                 withTimeout(`${API_BASE}/tenant/reservations`, { headers: { Authorization: `Bearer ${token}` } })
             ];
-            const [u, r] = await Promise.all(tasks);
-            if (u.ok) setUsers(await u.json());
-            if (r.ok) setReservations(await r.json());
+            
+            console.log('📡 Fetching data from API (2 parallel requests)...');
+            const results = await Promise.allSettled(tasks);
+            
+            if (results[0].status === 'fulfilled' && results[0].value.ok) {
+                const usersData = await results[0].value.json();
+                setUsers(usersData);
+                localStorage.setItem(CACHE_KEYS.users, JSON.stringify(usersData));
+                localStorage.setItem(CACHE_KEYS.users + '_time', Date.now().toString());
+                console.log(`✅ Users loaded: ${usersData.length} items`);
+            }
+            
+            if (results[1].status === 'fulfilled' && results[1].value.ok) {
+                const reservationsData = await results[1].value.json();
+                setReservations(reservationsData);
+                localStorage.setItem(CACHE_KEYS.reservations, JSON.stringify(reservationsData));
+                console.log(`✅ Reservations loaded: ${reservationsData.length} items`);
+            }
+            
+            const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
+            console.log(`✅ All data loaded and cached in ${loadTime}s`);
+            
+        } catch (err) {
+            console.error('Failed to fetch fresh data:', err);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            const token = await idToken();
+            const CACHE_KEYS = {
+                users: 'tenant_users_cache',
+                reservations: 'tenant_reservations_cache'
+            };
+            await fetchFreshData(token, CACHE_KEYS);
+            alert('✅ Data refreshed successfully!');
         } catch (e) {
-            console.error('Failed to load tenant data', e);
+            alert(`❌ Refresh failed: ${e.message}`);
+        } finally {
+            setRefreshing(false);
         }
     };
 
@@ -119,6 +201,13 @@ export default function TenantAdmin() {
                 <button style={styles.tab(activeTab === 'users')} onClick={() => setActiveTab('users')}>👥 Users ({users.length})</button>
                 <button style={styles.tab(activeTab === 'reservations')} onClick={() => setActiveTab('reservations')}>📅 Reservations ({reservations.length})</button>
                 <button style={styles.tab(activeTab === 'add-user')} onClick={() => setActiveTab('add-user')}>➕ Add User</button>
+                <button 
+                    style={{...styles.tab(false), marginLeft: 'auto', opacity: refreshing ? 0.6 : 1}} 
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                >
+                    {refreshing ? '🔄 Refreshing...' : '🔄 Refresh Data'}
+                </button>
             </div>
 
             {activeTab === 'users' && (
