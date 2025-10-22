@@ -14,6 +14,7 @@ export default function TenantAdmin() {
     const [reservations, setReservations] = useState([]);
     const [newUser, setNewUser] = useState({ email: '', password: '', role: 'tenant_user' });
     const [refreshing, setRefreshing] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
 
     useEffect(() => {
         if (!user) return;
@@ -39,7 +40,7 @@ export default function TenantAdmin() {
         return token;
     };
 
-    const withTimeout = (url, opts = {}, ms = 30000) => {
+    const withTimeout = (url, opts = {}, ms = 15000) => {
         const ctrl = new AbortController();
         const id = setTimeout(() => ctrl.abort(), ms);
         return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
@@ -83,6 +84,7 @@ export default function TenantAdmin() {
                 // Refresh in background (don't await)
                 console.log('🔄 Refreshing data in background...');
                 fetchFreshData(token, CACHE_KEYS);
+                setInitialLoading(false); // Cache loaded, hide loading
                 return; // Exit early - data is already displayed
             }
             
@@ -92,6 +94,8 @@ export default function TenantAdmin() {
             
         } catch (e) {
             console.error('Failed to load tenant data', e);
+        } finally {
+            setInitialLoading(false);
         }
     };
     
@@ -99,8 +103,8 @@ export default function TenantAdmin() {
         const startTime = Date.now();
         try {
             const tasks = [
-                withTimeout(`${API_BASE}/tenant/users`, { headers: { Authorization: `Bearer ${token}` } }),
-                withTimeout(`${API_BASE}/tenant/reservations`, { headers: { Authorization: `Bearer ${token}` } })
+                withTimeout(`${API_BASE}/tenant/users?_t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } }),
+                withTimeout(`${API_BASE}/tenant/reservations?_t=${Date.now()}`, { headers: { Authorization: `Bearer ${token}` } })
             ];
             
             console.log('📡 Fetching data from API (2 parallel requests)...');
@@ -189,6 +193,25 @@ export default function TenantAdmin() {
         btnPrimary: { padding: '10px 20px', background: 'linear-gradient(135deg, #00d4ff, #35e5cf)', color: '#0a0e27', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 },
         input: { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,212,255,0.2)', borderRadius: 8, color: '#e0e7ff', fontSize: 14, marginBottom: 12 }
     };
+
+    // Show loading screen on first load
+    if (initialLoading) {
+        return (
+            <div style={styles.container}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>⏳</div>
+                    <h2 style={{ color: '#00d4ff', marginBottom: 8 }}>Loading Tenant Admin Data...</h2>
+                    <p style={{ color: '#9bb1b1', textAlign: 'center', maxWidth: 400 }}>
+                        Fetching users and reservations from the database.<br/>
+                        This may take a few moments on first load.
+                    </p>
+                    <div style={{ marginTop: 24, padding: '12px 24px', background: 'rgba(0,212,255,0.1)', borderRadius: 8, color: '#00d4ff', fontSize: 14 }}>
+                        💡 Subsequent visits will load instantly from cache
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={styles.container}>
