@@ -17,6 +17,7 @@ export default function ProviderAdmin() {
     const [users, setUsers] = useState([]);
     const [reservations, setReservations] = useState([]);
     const [tenants, setTenants] = useState([]);
+    const [auditLogs, setAuditLogs] = useState([]);
     
     // UI states
     const [selectedReservation, setSelectedReservation] = useState(null);
@@ -103,7 +104,8 @@ export default function ProviderAdmin() {
             const CACHE_KEYS = {
                 users: 'provider_users_cache',
                 reservations: 'provider_reservations_cache',
-                tenants: 'provider_tenants_cache'
+                tenants: 'provider_tenants_cache',
+                auditLogs: 'provider_audit_logs_cache'
             };
             const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
             
@@ -111,6 +113,7 @@ export default function ProviderAdmin() {
             const cachedUsers = localStorage.getItem(CACHE_KEYS.users);
             const cachedReservations = localStorage.getItem(CACHE_KEYS.reservations);
             const cachedTenants = localStorage.getItem(CACHE_KEYS.tenants);
+            const cachedAuditLogs = localStorage.getItem(CACHE_KEYS.auditLogs);
             const cacheTime = localStorage.getItem(CACHE_KEYS.users + '_time');
             
             const cacheValid = cacheTime && (Date.now() - parseInt(cacheTime) < CACHE_TTL);
@@ -128,6 +131,10 @@ export default function ProviderAdmin() {
                 if (cachedTenants) {
                     setTenants(JSON.parse(cachedTenants));
                     console.log('⚡ Tenants loaded instantly from local cache');
+                }
+                if (cachedAuditLogs) {
+                    setAuditLogs(JSON.parse(cachedAuditLogs));
+                    console.log('⚡ Audit logs loaded instantly from local cache');
                 }
                 
                 // Refresh in background (don't await)
@@ -152,9 +159,10 @@ export default function ProviderAdmin() {
                 withTimeout(`${API_BASE}/admin/provider/all-users`, { headers: { Authorization: `Bearer ${token}` } }),
                 withTimeout(`${API_BASE}/admin/provider/all-reservations`, { headers: { Authorization: `Bearer ${token}` } }),
                 withTimeout(`${API_BASE}/admin/tenants`, { headers: { Authorization: `Bearer ${token}` } }),
+                withTimeout(`${API_BASE}/admin/audit-logs`, { headers: { Authorization: `Bearer ${token}` } }),
             ];
             
-            console.log('📡 Fetching data from API (3 parallel requests)...');
+            console.log('📡 Fetching data from API (4 parallel requests)...');
             const results = await Promise.allSettled(tasks);
             
             if (results[0].status === 'fulfilled' && results[0].value.ok) {
@@ -177,6 +185,13 @@ export default function ProviderAdmin() {
                 setTenants(tenantsData);
                 localStorage.setItem(CACHE_KEYS.tenants, JSON.stringify(tenantsData));
                 console.log(`✅ Tenants loaded: ${tenantsData.length} items`);
+            }
+            
+            if (results[3].status === 'fulfilled' && results[3].value.ok) {
+                const auditLogsData = await results[3].value.json();
+                setAuditLogs(auditLogsData);
+                localStorage.setItem(CACHE_KEYS.auditLogs, JSON.stringify(auditLogsData));
+                console.log(`✅ Audit logs loaded: ${auditLogsData.length} items`);
             }
             
             const loadTime = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -461,6 +476,12 @@ export default function ProviderAdmin() {
                 >
                     ➕ Create User
                 </button>
+                <button 
+                    style={tabStyle(activeTab === 'audit-trail')} 
+                    onClick={() => setActiveTab('audit-trail')}
+                >
+                    📋 Audit Trail ({auditLogs.length})
+                </button>
             </div>
             
             {/* Users Tab */}
@@ -635,6 +656,55 @@ export default function ProviderAdmin() {
                                 Create User
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Audit Trail Tab */}
+            {activeTab === 'audit-trail' && (
+                <div style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <h2 style={{ ...h2, marginBottom: 0 }}>System Audit Trail</h2>
+                        {auditLogs.length === 0 && <span style={{ color: '#9bb1b1', fontSize: 13 }}>Loading...</span>}
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={tableStyle}>
+                            <thead>
+                                <tr>
+                                    <th style={thStyle}>Timestamp</th>
+                                    <th style={thStyle}>User</th>
+                                    <th style={thStyle}>Action</th>
+                                    <th style={thStyle}>Resource</th>
+                                    <th style={thStyle}>Details</th>
+                                    <th style={thStyle}>IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {auditLogs.map(log => (
+                                    <tr key={log.id || log.timestamp}>
+                                        <td style={tdStyle}>
+                                            {log.timestamp ? new Date(log.timestamp).toLocaleString() : 
+                                             log.created_at ? new Date(log.created_at).toLocaleString() : '-'}
+                                        </td>
+                                        <td style={tdStyle}>{log.user_email || log.user_id || 'System'}</td>
+                                        <td style={tdStyle}>
+                                            <span style={badgeStyle(log.action === 'CREATE' ? 'confirmed' : 
+                                                                   log.action === 'UPDATE' ? 'active' : 
+                                                                   log.action === 'DELETE' ? 'cancelled' : 'pending')}>
+                                                {log.action || log.event || 'Unknown'}
+                                            </span>
+                                        </td>
+                                        <td style={tdStyle}>{log.resource_type || log.table_name || '-'}</td>
+                                        <td style={tdStyle}>
+                                            <div style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {log.details || log.description || log.changes || '-'}
+                                            </div>
+                                        </td>
+                                        <td style={tdStyle}>{log.ip_address || '-'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             )}
